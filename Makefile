@@ -13,17 +13,18 @@ GPP_LIBS :=
 
 LIB_BINARY := $(OUTPUT_DIR)/libquicprofiler.a
 LIB_GPPFLAGS := -g -Wall -Werror
+LIB_LDFLAGS := -lrt
 
 TEST_SERVER := $(OUTPUT_DIR)/test_server
 TEST_CLIENT := $(OUTPUT_DIR)/test_client
 TEST_GPPFLAGS := -g -Wall -Werror
-TEST_LDFLAGS := 
+TEST_LDFLAGS := $(LIB_BINARY) -lrt
 
 all: $(LIB_BINARY) $(TEST_CLIENT) $(TEST_SERVER)
 
 $(BUILD_DIR)/%.o: $(SRC_DIR)/%.cpp
 	@mkdir -p $(@D)
-	$(GPP) $(LIB_GPPFLAGS) $(GPP_INC_DIRS) -MMD -MP -c -o $@ $<
+	$(GPP) $(LIB_GPPFLAGS) $(GPP_INC_DIRS) -I$(INC_DIR) -MMD -MP -c -o $@ $< $(LIB_LDFLAGS)
 
 $(LIB_BINARY): $(OBJ_FILES)
 	@mkdir -p $(@D)
@@ -31,11 +32,11 @@ $(LIB_BINARY): $(OBJ_FILES)
 
 $(TEST_SERVER): test_server.cpp $(LIB_BINARY)
 	@mkdir -p $(@D)
-	$(GPP) $(TEST_GPPFLAGS) $(TEST_LDFLAGS) $(GPP_INC_DIRS) -I$(INC_DIR) $(LIB_BINARY) -o $@ $<
+	$(GPP) $(TEST_GPPFLAGS) $(GPP_INC_DIRS) -I$(INC_DIR) -o $@ $< $(LIB_BINARY) $(TEST_LDFLAGS)
 
 $(TEST_CLIENT): test_client.cpp $(LIB_BINARY)
 	@mkdir -p $(@D)
-	$(GPP) $(TEST_GPPFLAGS) $(TEST_LDFLAGS) $(GPP_INC_DIRS) -I$(INC_DIR) $(LIB_BINARY) -o $@ $<
+	$(GPP) $(TEST_GPPFLAGS) $(GPP_INC_DIRS) -I$(INC_DIR) -o $@ $< $(TEST_LDFLAGS)
 
 clean:
 	rm -rf build/* bin/*
