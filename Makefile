@@ -11,7 +11,7 @@ GPP_INC_DIRS :=
 GPP_LIB_DIRS := 
 GPP_LIBS := 
 
-LIB_BINARY := $(OUTPUT_DIR)/libquicprofiler.a
+LIB_BINARY := $(OUTPUT_DIR)/libprofiler.a
 LIB_GPPFLAGS := -g -Wall -Werror
 LIB_LDFLAGS := -lrt
 
