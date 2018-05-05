@@ -13,12 +13,12 @@ GPP_LIBS :=
 
 LIB_BINARY := $(OUTPUT_DIR)/libprofiler.a
 LIB_GPPFLAGS := -g -Wall -Werror
-LIB_LDFLAGS := -lrt
+LIB_LDFLAGS := -lrt -lpthread
 
 TEST_SERVER := $(OUTPUT_DIR)/test_server
 TEST_CLIENT := $(OUTPUT_DIR)/test_client
 TEST_GPPFLAGS := -g -Wall -Werror
-TEST_LDFLAGS := $(LIB_BINARY) -lrt
+TEST_LDFLAGS := $(LIB_BINARY) -lrt -lpthread
 
 all: $(LIB_BINARY) $(TEST_CLIENT) $(TEST_SERVER)
 
