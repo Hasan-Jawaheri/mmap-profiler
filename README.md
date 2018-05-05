@@ -2,6 +2,8 @@
 Generic profiling tool that uses shared memory for logging
 
 # Building
+### Requirements
+- ncurses library (on Ubuntu, `sudo apt-get install ncurses-dev`)
 Run `make`.
 
 # Usage
