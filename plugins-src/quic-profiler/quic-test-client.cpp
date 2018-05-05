@@ -1,5 +1,5 @@
-#include "profiler.hpp"
-#include "plugins/quic-plugin.hpp"
+#include "mmap-profiler/profiler.hpp"
+#include "mmap-profiler/plugins/quic-plugin.hpp"
 #include <unistd.h>
 
 #include <iostream>
@@ -14,13 +14,12 @@ int main() {
     }
 
     for (int i = 0; i < 1000; i++) {
-        QuicLoggable* l = new QuicLoggable(i % 10, i % 100);
-        if (so->Log(l) < 0) {
+        QuicLoggable l(i % 10, i % 100);
+        if (so->Log(&l) < 0) {
             cout << "Failed! " << i << endl;
             i--;
         }
         usleep(50000);
-        delete l;
     }
     cout << "Done" << endl;
     ProfilerSharedObject::Destroy();

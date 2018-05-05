@@ -1,4 +1,4 @@
-#include "profiler.hpp"
+#include "mmap-profiler/profiler.hpp"
 
 #include <sys/mman.h>
 #include <sys/stat.h>

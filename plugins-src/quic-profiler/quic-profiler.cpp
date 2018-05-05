@@ -1,5 +1,5 @@
-#include "profiler.hpp"
-#include "plugins/quic-plugin.hpp"
+#include "mmap-profiler/profiler.hpp"
+#include "mmap-profiler/plugins/quic-plugin.hpp"
 #include <signal.h>
 #include <curses.h>
 
@@ -36,10 +36,15 @@ public:
         long long queueSize = log->m_data.queueSize;
         auto it = m_runningSessions.find(connId);
         if (it == m_runningSessions.end()) {
-            QUIC_SESSION_DATA qd {connId, queueSize};
-            m_runningSessions.insert(std::pair<long long, QUIC_SESSION_DATA>(connId, qd));
-        } else
+            if (queueSize > 0) {
+                QUIC_SESSION_DATA qd {connId, queueSize};
+                m_runningSessions.insert(std::pair<long long, QUIC_SESSION_DATA>(connId, qd));
+            }
+        } else {
             it->second.queueSize = queueSize;
+            if (queueSize == 0)
+                m_runningSessions.erase(it);
+        }
     }
 
     void Render() {
@@ -74,7 +79,7 @@ public:
                         if (j < curbarlen) bar[j] = '#';
                         else bar[j] = ' ';
                     }
-                    sprintf(buf, "[%10ld][%10ld][%s]", (long int)arr[i].connId, (long int)arr[i].queueSize, bar);
+                    sprintf(buf, "[%10ld][%10ld][%s]", (long int)arr[i].connId % 10000000000, (long int)arr[i].queueSize, bar);
                     mvprintw(curline, 0, buf);
                     curline++;
                 }
@@ -103,6 +108,7 @@ int main() {
 
     signal(SIGINT, intHandler);
 
+    QuicProfiler.Render();
     while (g_keepRunning) {
         std::vector<Loggable*> logs;
         so->ConsumeLogs(logs, QuicLoggable::Create);

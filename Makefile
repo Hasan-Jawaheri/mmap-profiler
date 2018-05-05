@@ -12,7 +12,7 @@ GPP_LIB_DIRS :=
 GPP_LIBS := 
 
 LIB_BINARY := $(OUTPUT_DIR)/libprofiler.a
-LIB_GPPFLAGS := -g -Wall -Werror
+LIB_GPPFLAGS := -g -Wall -Werror -fPIC
 LIB_LDFLAGS := -lrt -lpthread
 
 TEST_SERVER := $(OUTPUT_DIR)/test_server
@@ -53,3 +53,11 @@ $(QUIC_TEST_CLIENT): plugins-src/quic-profiler/quic-test-client.cpp $(LIB_BINARY
 
 clean:
 	rm -rf build/* bin/*
+
+install: all
+	cp $(LIB_BINARY) /usr/lib/libprofiler.a
+	cp -r inc/* /usr/include/
+
+uninstall:
+	sudo rm /usr/lib/libprofiler.a
+	sudo rm -rf /usr/include/mmap-profiler/

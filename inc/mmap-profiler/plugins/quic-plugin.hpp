@@ -1,6 +1,6 @@
 #pragma once
 
-#include "profiler.hpp"
+#include "mmap-profiler/profiler.hpp"
 #include <string.h>
 
 class QuicLoggable : public Loggable {

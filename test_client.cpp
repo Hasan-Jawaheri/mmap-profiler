@@ -1,4 +1,4 @@
-#include "profiler.hpp"
+#include "mmap-profiler/profiler.hpp"
 #include <unistd.h>
 
 #include <iostream>
