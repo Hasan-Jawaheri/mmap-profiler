@@ -79,7 +79,7 @@ public:
                         if (j < curbarlen) bar[j] = '#';
                         else bar[j] = ' ';
                     }
-                    sprintf(buf, "[%10ld][%10ld][%s]", (long int)arr[i].connId % 10000000000, (long int)arr[i].queueSize, bar);
+                    sprintf(buf, "[%11ld][%10ld][%s]", (long int)arr[i].connId % 10000000000, (long int)arr[i].queueSize, bar);
                     mvprintw(curline, 0, buf);
                     curline++;
                 }
