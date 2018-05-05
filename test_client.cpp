@@ -12,15 +12,13 @@ int main() {
         return -1;
     }
 
-    LOG_ITEM d;
-    d.data = (void*)"0123456789";
     for (int i = 0; i < 100; i++) {
-        d.size = i % 10 + 1;
-        if (so->Log(d) < 0) {
+        BasicLoggable* l = new BasicLoggable((void*)"0123456789", i % 10 + 1);
+        if (so->Log(l) < 0) {
             cout << "Failed! " << i << endl;
             i--;
-            //sleep(1);
         }
+        delete l;
     }
     cout << "Done" << endl;
     ProfilerSharedObject::Destroy();

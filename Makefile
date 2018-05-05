@@ -20,7 +20,12 @@ TEST_CLIENT := $(OUTPUT_DIR)/test_client
 TEST_GPPFLAGS := -g -Wall -Werror
 TEST_LDFLAGS := $(LIB_BINARY) -lrt -lpthread
 
-all: $(LIB_BINARY) $(TEST_CLIENT) $(TEST_SERVER)
+QUIC_PROFILER := $(OUTPUT_DIR)/quic_profiler
+QUIC_TEST_CLIENT := $(OUTPUT_DIR)/quic_test_client
+QUIC_GPPFLAGS := -g -Wall -Werror
+QUIC_LDFLAGS := $(LIB_BINARY) -lrt -lpthread
+
+all: $(LIB_BINARY) $(TEST_CLIENT) $(TEST_SERVER) $(QUIC_PROFILER) $(QUIC_TEST_CLIENT)
 
 $(BUILD_DIR)/%.o: $(SRC_DIR)/%.cpp
 	@mkdir -p $(@D)
@@ -37,6 +42,14 @@ $(TEST_SERVER): test_server.cpp $(LIB_BINARY)
 $(TEST_CLIENT): test_client.cpp $(LIB_BINARY)
 	@mkdir -p $(@D)
 	$(GPP) $(TEST_GPPFLAGS) $(GPP_INC_DIRS) -I$(INC_DIR) -o $@ $< $(TEST_LDFLAGS)
+
+$(QUIC_PROFILER): src/quic-profiler/quic-profiler.cpp $(LIB_BINARY)
+	@mkdir -p $(@D)
+	$(GPP) $(QUIC_GPPFLAGS) $(GPP_INC_DIRS) -I$(INC_DIR) -o $@ $< $(LIB_BINARY) $(QUIC_LDFLAGS)
+
+$(QUIC_TEST_CLIENT): src/quic-profiler/quic-test-client.cpp $(LIB_BINARY)
+	@mkdir -p $(@D)
+	$(GPP) $(QUIC_GPPFLAGS) $(GPP_INC_DIRS) -I$(INC_DIR) -o $@ $< $(LIB_BINARY) $(QUIC_LDFLAGS)
 
 clean:
 	rm -rf build/* bin/*

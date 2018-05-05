@@ -5,11 +5,28 @@
 
 #include <vector>
 
-#define DEFAULT_SHARED_MAP_SIZE (sizeof(ProfilerSharedObject)+50) // 200*1024*1024
+#define DEFAULT_SHARED_MAP_SIZE 200*1024*1024
 
-struct LOG_ITEM {
-    void* data;
-    int size;
+class Loggable {
+public:
+    virtual ~Loggable() {}
+
+    virtual void* GetData() const = 0;
+    virtual int   GetSize() const = 0;
+};
+
+class BasicLoggable : public Loggable {
+    void* m_data;
+    int   m_size;
+
+public:
+    BasicLoggable(void* data, int size) : m_data(data), m_size(size) {}
+    ~BasicLoggable() {}
+    
+    virtual void* GetData() const { return m_data; }
+    virtual int   GetSize() const { return m_size; }
+
+    static Loggable* Create(void* data, int size) { return new BasicLoggable(data, size); }
 };
 
 class ProfilerSharedObject {
@@ -42,13 +59,6 @@ class ProfilerSharedObject {
     volatile long long m_queue_start, m_queue_end;
     /** Process-shared mutex used (by all processes) to allocate/free queue memory */
     pthread_mutex_t m_queue_mutex;
-    /** Process-shared conditional variable on m_queue_mutex */
-    pthread_cond_t m_queue_cond;
-
-    /**
-     * Adds data at the end of the queue
-     */
-    int WriteToQueue(void* user_mem, size_t size);
 
 public:
     /**
@@ -94,7 +104,7 @@ public:
 
     ProfilerSharedObject(size_t max_size);
 
-    int Log(LOG_ITEM it);
+    int Log(Loggable* it);
     /** LOGS ARE ERASED ON NEXT CALL */
-    void ConsumeLogs(std::vector<LOG_ITEM>& logs);
+    void ConsumeLogs(std::vector<Loggable*>& logs, Loggable* (*loggable_factory) (void* data, int size));
 };

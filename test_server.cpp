@@ -14,7 +14,7 @@ void intHandler(int) {
 }
 
 int main() {
-    ProfilerSharedObject* so = ProfilerSharedObject::Create();
+    ProfilerSharedObject* so = ProfilerSharedObject::Create(300);
     if (!so) {
         cout << "Error creating the shared object" <<endl;
         return -1;
@@ -23,12 +23,13 @@ int main() {
     signal(SIGINT, intHandler);
 
     while (g_keep_running) {
-        std::vector<LOG_ITEM> logs;
-        so->ConsumeLogs(logs);
-        for (std::vector<LOG_ITEM>::iterator it = logs.begin(); it != logs.end(); it++) {
+        std::vector<Loggable*> logs;
+        so->ConsumeLogs(logs, BasicLoggable::Create);
+        for (std::vector<Loggable*>::iterator it = logs.begin(); it != logs.end(); it++) {
             char buf[256] = {0};
-            memcpy(buf, it->data, it->size);
+            memcpy(buf, (*it)->GetData(), (*it)->GetSize());
             cout << buf << endl;
+            delete *it;
         }
     }
 

@@ -130,14 +130,13 @@ ProfilerSharedObject::ProfilerSharedObject(size_t max_size) : m_shared_mem_size(
     pthread_mutexattr_init(&mutex_attr);
     pthread_mutexattr_setpshared(&mutex_attr, PTHREAD_PROCESS_SHARED);
     pthread_mutex_init(&m_queue_mutex, &mutex_attr);
-    pthread_condattr_t cond_attr;
-    pthread_condattr_init(&cond_attr);
-    pthread_condattr_setpshared(&cond_attr, PTHREAD_PROCESS_SHARED);
-    pthread_cond_init(&m_queue_cond, &cond_attr);
 }
 
-int ProfilerSharedObject::WriteToQueue(void* user_mem, size_t size) {
-    size_t actual_user_mem_size = size;
+int ProfilerSharedObject::Log(Loggable* it) {
+    void* user_mem = it->GetData();
+    size_t size = it->GetSize();
+    int user_mem_size = size;
+
     size += 4; // 4 bytes to store the allocation size
     size = 4 * ((size+3)/4); // align to multiple of 4
 
@@ -163,7 +162,7 @@ int ProfilerSharedObject::WriteToQueue(void* user_mem, size_t size) {
     // write the size at the first 4 bytes (allocations and queue mem size are 4 byte aligned so this will always be safe)
     char* queue_mem = m_queue_mem_start + allocated_queue_offset;
     assert(m_queue_mem_end - queue_mem >= 4);
-    *((int*)queue_mem) = actual_user_mem_size;
+    *((int*)queue_mem) = user_mem_size;
     queue_mem += 4;
     allocated_queue_offset += 4;
     size -= 4;
@@ -183,11 +182,7 @@ int ProfilerSharedObject::WriteToQueue(void* user_mem, size_t size) {
     return 0;
 }
 
-int ProfilerSharedObject::Log(LOG_ITEM it) {
-    return WriteToQueue(it.data, it.size);
-}
-
-void ProfilerSharedObject::ConsumeLogs(std::vector<LOG_ITEM>& logs) {
+void ProfilerSharedObject::ConsumeLogs(std::vector<Loggable*>& logs, Loggable* (*loggable_factory) (void* data, int size)) {
     long long queue_end = m_queue_end;
     long long queue_start = m_queue_start;
     if (queue_end != queue_start) { // not empty
@@ -214,10 +209,7 @@ void ProfilerSharedObject::ConsumeLogs(std::vector<LOG_ITEM>& logs) {
         char* cur_mem = m_allocated_consumption_mem;
         while (size_to_read) {
             int size = *(int*)cur_mem;
-            LOG_ITEM it;
-            it.size = size;
-            it.data = cur_mem + 4;
-            logs.push_back(it);
+            logs.push_back(loggable_factory(cur_mem + 4, size));
 
             size = 4 * ((size+3)/4) + 4; // include the 4 bytes of the size and align to 4
             cur_mem += size;
