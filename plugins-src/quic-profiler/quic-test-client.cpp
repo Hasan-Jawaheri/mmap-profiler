@@ -1,5 +1,6 @@
 #include "mmap-profiler/profiler.hpp"
 #include "mmap-profiler/plugins/quic-plugin.hpp"
+#include <sys/types.h>
 #include <unistd.h>
 
 #include <iostream>
@@ -14,7 +15,7 @@ int main() {
     }
 
     for (int i = 0; i < 1000; i++) {
-        QuicLoggable l(i % 10, i % 100);
+        QuicLoggable l(i % 10, i % 100, getpid());
         if (so->Log(&l) < 0) {
             cout << "Failed! " << i << endl;
             i--;

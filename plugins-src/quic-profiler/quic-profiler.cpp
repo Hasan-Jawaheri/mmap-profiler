@@ -26,13 +26,8 @@ static volatile int g_keepRunning = 1;
 extern int LINES, COLUMNS;
 
 class QuicProfiler_t {
-    struct QUIC_SESSION_DATA {
-        long long connId;
-        long long queueSize;
-    };
-
     ofstream m_logFile;
-    unordered_map<long long, QUIC_SESSION_DATA> m_runningSessions;
+    unordered_map<long long, QuicLoggable::DATA> m_runningSessions;
 
 public:
     QuicProfiler_t() {}
@@ -50,38 +45,39 @@ public:
     void OnLog(QuicLoggable* log, unsigned long long curTime) {
         long long connId = log->m_data.connId;
         long long queueSize = log->m_data.queueSize;
+        long long pid = log->m_data.procId;
         auto it = m_runningSessions.find(connId);
         if (it == m_runningSessions.end()) {
             if (queueSize > 0) {
-                QUIC_SESSION_DATA qd {connId, queueSize};
-                m_runningSessions.insert(std::pair<long long, QUIC_SESSION_DATA>(connId, qd));
+                QuicLoggable::DATA qd(connId, queueSize, pid);
+                m_runningSessions.insert(std::pair<long long, QuicLoggable::DATA>(connId, qd));
             }
         } else {
             it->second.queueSize = queueSize;
             if (queueSize == 0)
                 m_runningSessions.erase(it);
         }
-        m_logFile << "[" << curTime << "][" << connId << "][" << queueSize << "]" << endl;
+        m_logFile << "[" << curTime << "][" << pid << "][" << connId << "][" << queueSize << "]" << endl;
     }
 
     void Render() {
         int sh, sw;
         char buf[1024];
         getmaxyx(stdscr, sh, sw);
-        int barlen = sw - 20 - 6;
+        int barlen = sw - 31 - 8;
         clear();
 
-        mvprintw(0, 0, "[  connId  ][Queue Size]");
+        mvprintw(0, 0, "[  connId   ][   pid    ][Queue Size]");
 
         if (m_runningSessions.size() > 0) {
-            vector<QUIC_SESSION_DATA> arr;
+            vector<QuicLoggable::DATA> arr;
             
             int curline = 1;
             for (auto it = m_runningSessions.begin(); it != m_runningSessions.end(); it++) {
                 arr.push_back(it->second);
             };
 
-            std::sort(arr.begin(), arr.end(), [](QUIC_SESSION_DATA a, QUIC_SESSION_DATA b) {
+            std::sort(arr.begin(), arr.end(), [](QuicLoggable::DATA a, QuicLoggable::DATA b) {
                 return a.queueSize > b.queueSize;
             });
             if ((int)arr.size() > sh - 1)
@@ -96,7 +92,7 @@ public:
                         if (j < curbarlen) bar[j] = '#';
                         else bar[j] = ' ';
                     }
-                    sprintf(buf, "[%11ld][%10ld][%s]", (long int)arr[i].connId % 10000000000, (long int)arr[i].queueSize, bar);
+                    sprintf(buf, "[%11ld][%10ld][%10ld][%s]", (long int)arr[i].connId % 10000000000, (long int)arr[i].procId, (long int)arr[i].queueSize, bar);
                     mvprintw(curline, 0, buf);
                     curline++;
                 }
