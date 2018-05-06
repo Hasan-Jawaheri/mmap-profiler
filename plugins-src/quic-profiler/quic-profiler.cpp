@@ -62,7 +62,7 @@ public:
             if (queueSize == 0)
                 m_runningSessions.erase(it);
         }
-        m_logFile << "[" << curTime << "][" << pid << "][" << connId << "][" << queueSize << "]" << endl;
+        m_logFile << "[" << curTime << "][" << pid << "][" << connId << "][" << queueSize << "]\n";
     }
 
     void Render() {
