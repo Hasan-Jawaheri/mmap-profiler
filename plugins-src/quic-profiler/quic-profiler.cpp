@@ -8,11 +8,17 @@
 #include <array>
 #include <unordered_map>
 #include <vector>
+#include <iostream>
+#include <fstream>
+#include <string>
+#include <chrono>
+#include <ctime>
 
 using std::unordered_map;
 using std::vector;
-
-#include <iostream>
+using std::ofstream;
+using std::ios;
+using std::string;
 using std::cout;
 using std::endl;
 
@@ -25,13 +31,23 @@ class QuicProfiler_t {
         long long queueSize;
     };
 
+    ofstream m_logFile;
     unordered_map<long long, QUIC_SESSION_DATA> m_runningSessions;
 
 public:
     QuicProfiler_t() {}
     ~QuicProfiler_t() {}
 
-    void OnLog(QuicLoggable* log) {
+    int SetLogFilename(string filename) {
+        m_logFile.open(filename, ios::out);
+        return m_logFile.is_open() ? 0 : 1;
+    }
+
+    void CloseLogFile() {
+        m_logFile.close();
+    }
+
+    void OnLog(QuicLoggable* log, unsigned long long curTime) {
         long long connId = log->m_data.connId;
         long long queueSize = log->m_data.queueSize;
         auto it = m_runningSessions.find(connId);
@@ -45,6 +61,7 @@ public:
             if (queueSize == 0)
                 m_runningSessions.erase(it);
         }
+        m_logFile << "[" << curTime << "][" << connId << "][" << queueSize << "]" << endl;
     }
 
     void Render() {
@@ -95,7 +112,16 @@ void intHandler(int) {
     g_keepRunning = 0;
 }
 
-int main() {
+long long getSysElapsedTime() {
+    return std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::system_clock::now().time_since_epoch()).count();
+}
+
+int main(int argc, char* argv[]) {
+    if (argc != 2 || QuicProfiler.SetLogFilename(string(argv[1])) != 0) {
+        cout << "Usage: " << argv[0] << " <output filename>" << endl;
+        return -1;
+    }
+
     initscr();
     noecho();
     curs_set(false);
@@ -103,24 +129,31 @@ int main() {
     ProfilerSharedObject* so = ProfilerSharedObject::Create();
     if (!so) {
         cout << "Error creating the shared object" <<endl;
-        return -1;
+        return -2;
     }
 
     signal(SIGINT, intHandler);
+
+    long long initialTime = getSysElapsedTime();
 
     QuicProfiler.Render();
     while (g_keepRunning) {
         std::vector<Loggable*> logs;
         so->ConsumeLogs(logs, QuicLoggable::Create);
-        for (std::vector<Loggable*>::iterator it = logs.begin(); it != logs.end(); it++) {
-            QuicProfiler.OnLog((QuicLoggable*)*it);
-            delete *it;
-        }
-        if (logs.size() > 0)
+        if (logs.size() > 0) {
+            long long curTime = getSysElapsedTime() - initialTime;
+            for (std::vector<Loggable*>::iterator it = logs.begin(); it != logs.end(); it++) {
+                QuicProfiler.OnLog((QuicLoggable*)*it, curTime);
+                delete *it;
+            }
             QuicProfiler.Render();
+        }
     }
 
     ProfilerSharedObject::Destroy();
     endwin();
+
+    QuicProfiler.CloseLogFile();
+
     return 0;
 }
