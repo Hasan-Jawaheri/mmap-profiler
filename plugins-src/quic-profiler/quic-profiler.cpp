@@ -27,7 +27,12 @@ extern int LINES, COLUMNS;
 
 class QuicProfiler_t {
     ofstream m_logFile;
-    unordered_map<long long, QuicLoggable::DATA> m_runningSessions;
+    // from string 'pid:connId' to the data of that session
+    unordered_map<string, QuicLoggable::DATA> m_runningSessions;
+
+    string makeMapKey(long long pid, long long connId) {
+        return std::to_string(pid) + ":" + std::to_string(connId);
+    }
 
 public:
     QuicProfiler_t() {}
@@ -46,11 +51,11 @@ public:
         long long connId = log->m_data.connId;
         long long queueSize = log->m_data.queueSize;
         long long pid = log->m_data.procId;
-        auto it = m_runningSessions.find(connId);
+        auto it = m_runningSessions.find(makeMapKey(pid, connId));
         if (it == m_runningSessions.end()) {
             if (queueSize > 0) {
                 QuicLoggable::DATA qd(connId, queueSize, pid);
-                m_runningSessions.insert(std::pair<long long, QuicLoggable::DATA>(connId, qd));
+                m_runningSessions.insert(std::pair<string, QuicLoggable::DATA>(makeMapKey(pid, connId), qd));
             }
         } else {
             it->second.queueSize = queueSize;
