@@ -2,6 +2,7 @@
 #include "mmap-profiler/plugins/quic-plugin.hpp"
 #include <signal.h>
 #include <curses.h>
+#include <unistd.h>
 
 #include <algorithm>
 #include <functional>
@@ -148,7 +149,8 @@ int main(int argc, char* argv[]) {
                 delete *it;
             }
             QuicProfiler.Render();
-        }
+        } else
+            usleep(500 * 1000); // sleep for 0.5s
     }
 
     ProfilerSharedObject::Destroy();
